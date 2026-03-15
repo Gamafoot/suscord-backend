@@ -1,0 +1,6 @@
+.vscode
+config/*
+!config/example.yaml
+src/assets/media
+**/*.log
+*.db

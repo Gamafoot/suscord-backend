@@ -1,0 +1,57 @@
+server:
+  port: 8000
+  timeout: 10s
+
+websocket:
+  timeout: 10s
+  pong_wait: 30s
+  ping_period: 15s
+
+database:
+  url: ../suscord.db
+  log_level: info
+
+secure:
+  hash:
+    salt: dakdbakbdakdas
+
+  cors:
+    origins:
+      - "http://localhost:8000"
+      - "http://127.0.0.1:8000"
+      - "http://localhost:5173"
+      - "http://127.0.0.1:5173"
+    allowed_methods:
+      - "GET"
+      - "POST"
+      - "PUT"
+      - "PATCH"
+      - "DELETE"
+      - "OPTIONS"
+    allowed_headers:
+      - "Origin"
+      - "Accept"
+      - "Content-Type"
+      - "Authorization"
+      - "Access-Control-Allow-Origin"
+
+media:
+  url: /media/
+  path: assets/media
+  max_size: 500m
+  allowed_media:
+    - "video"
+    - "image"
+    - "audio"
+
+static:
+  url: /static/
+  path: assets/static
+
+logger:
+  level: debug
+  folder: ./assets/logs
+
+livekit:
+  api_key: dadjbhajabdjda
+  api_secret: dakhdahgdadjabda
