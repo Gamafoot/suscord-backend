@@ -85,14 +85,16 @@ func (h *hub) GetCurrentCallMembers(clientID uint) ([]entity.User, error) {
 	var client *HubClient
 
 	h.mutex.RLock()
-	if c, ok := h.clients[clientID]; ok {
-		if c.callRoomID == 0 {
-			return nil, errors.New("you are not in a call")
-		}
-		client = c
-	} else {
+	c, ok := h.clients[clientID]
+	if !ok {
+		h.mutex.RUnlock()
 		return nil, fmt.Errorf("client with id = %d not found in websocket connections", clientID)
 	}
+	if c.callRoomID == 0 {
+		h.mutex.RUnlock()
+		return nil, errors.New("you are not in a call")
+	}
+	client = c
 	h.mutex.RUnlock()
 
 	result := make([]entity.User, 0)
