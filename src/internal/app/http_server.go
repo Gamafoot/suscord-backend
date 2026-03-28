@@ -80,7 +80,6 @@ func NewHttpServer(
 		middleware.LoggerWithConfig(middleware.LoggerConfig{
 			Format: "method=${method}, uri=${uri}, status=${status}\n",
 		}),
-		customMiddleware.RequestLogger,
 	)
 
 	apiHandler.InitRoutes(apiRoute)
