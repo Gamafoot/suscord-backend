@@ -1,0 +1,18 @@
+services:
+  backend:
+    container_name: backend
+    build: .
+    ports:
+      - 8000:8000
+    environment:
+      - API_HOST=0.0.0.0
+      - DB_URL=./database/suscord.db
+      - MIGRATE=true
+    volumes:
+      - "./database:/app/database"
+    networks:
+      - suscord
+    
+networks:
+  suscord:
+    driver: bridge

@@ -27,6 +27,8 @@ COPY --from=builder /out/api api
 COPY --from=builder /out/migrate migrate
 COPY src/assets assets
 
+RUN mkdir database
+RUN chmod -R 777 database
 RUN chmod +x entrypoint.sh
 
 USER nonroot
