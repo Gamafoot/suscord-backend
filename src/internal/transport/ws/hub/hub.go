@@ -7,6 +7,7 @@ import (
 	"suscord/internal/domain/entity"
 	"suscord/internal/domain/eventbus"
 	"suscord/internal/domain/storage"
+	gDTO "suscord/internal/transport/dto"
 	"suscord/internal/transport/ws/hub/dto"
 	"sync"
 
@@ -20,6 +21,7 @@ type CallRooms map[uint]map[uint]bool
 
 type Hub interface {
 	Register(client *HubClient, chats []entity.Chat)
+	Unregister(client *HubClient)
 	ReceiveMessageHandler(client *HubClient)
 	GetCurrentCallMembers(clientID uint) ([]entity.User, error)
 }
@@ -63,7 +65,7 @@ func (h *hub) ReceiveMessageHandler(client *HubClient) {
 		err := client.conn.ReadJSON(message)
 		if err != nil {
 			h.logger.Errorw("ws ReadJSON error", "error", err)
-			h.unregister(client)
+			h.Unregister(client)
 			return
 		}
 
@@ -79,6 +81,20 @@ func (h *hub) Register(client *HubClient, chats []entity.Chat) {
 	h.clients[client.user.ID] = client
 	h.mutex.Unlock()
 	h.joinToUserChatRooms(client, chats)
+
+	for chatRoomID := range client.chatRooms {
+		for _, ok := range h.callRooms[chatRoomID] {
+			if ok {
+				client.SendMessage(dto.ResponseMessage{
+					Event: onCallJoin,
+					Data: map[string]any{
+						"chat_id": chatRoomID,
+						"user":    gDTO.NewUser(client.user, h.cfg.Media.Url),
+					},
+				})
+			}
+		}
+	}
 }
 
 func (h *hub) GetCurrentCallMembers(clientID uint) ([]entity.User, error) {
@@ -110,7 +126,7 @@ func (h *hub) GetCurrentCallMembers(clientID uint) ([]entity.User, error) {
 	return result, nil
 }
 
-func (h *hub) unregister(client *HubClient) {
+func (h *hub) Unregister(client *HubClient) {
 	pendingRoomIDs := make([]uint, 0)
 
 	h.mutex.Lock()
@@ -120,6 +136,7 @@ func (h *hub) unregister(client *HubClient) {
 			pendingRoomIDs = append(pendingRoomIDs, roomID)
 			if room, ok := h.chatRooms[roomID]; ok {
 				delete(room, client.user.ID)
+
 				if len(room) == 0 {
 					delete(h.chatRooms, roomID)
 				}
@@ -136,10 +153,15 @@ func (h *hub) unregister(client *HubClient) {
 				}
 			}
 		}
+
 		delete(h.clients, client.user.ID)
 		client.conn.Close()
 	}
 	h.mutex.Unlock()
+
+	if client.callRoomID != 0 {
+		h.onLeaveCallRoom(client.callRoomID, client)
+	}
 
 	for _, roomID := range pendingRoomIDs {
 		h.broadcastToChatRoom(roomID, dto.ResponseMessage{

@@ -24,9 +24,7 @@ func (h *hub) registerEvents(bus eventbus.EventBus) {
 }
 
 func (h *hub) onMessageCreated(ctx context.Context, payload any) error {
-	log := h.logger.With(
-		"payload", payload,
-	)
+	log := h.logger.With("payload", payload)
 
 	data, ok := payload.(event.MessageCreated)
 	if !ok {

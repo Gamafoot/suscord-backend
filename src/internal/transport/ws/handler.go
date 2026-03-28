@@ -116,6 +116,9 @@ func (h *handler) websocket(c echo.Context) error {
 
 	h.hub.Register(client, chats)
 	h.hub.ReceiveMessageHandler(client)
+
+	h.hub.Unregister(client)
+
 	return nil
 }
 

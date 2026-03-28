@@ -5,12 +5,18 @@ import (
 	"suscord/internal/transport/ws/hub/dto"
 )
 
+const (
+	onError = "error"
+
+	onCallInvite = "call.invite"
+	onCallJoin   = "call.join"
+	onCallLeave  = "call.leave"
+	onRunDemo    = "call.demo.run"
+	onStopDemo   = "call.demo.stop"
+)
+
 func (h *hub) handleClientMessage(client *HubClient, message *dto.ClientMessage) error {
 	switch message.Event {
-	// case onCallInvite:
-	// 	h.joinCallRoom(message.RoomID, client)
-	// 	h.broadcastToChatRoomExcept(message.RoomID, client.user.ID, message)
-
 	case onCallJoin:
 		h.joinCallRoom(message.ChatID, client)
 		h.broadcastToChatRoomExcept(message.ChatID, client.user.ID, dto.ResponseMessage{
@@ -20,18 +26,21 @@ func (h *hub) handleClientMessage(client *HubClient, message *dto.ClientMessage)
 				"user":    gDTO.NewUser(client.user, h.cfg.Media.Url),
 			},
 		})
-		// if len(h.callRooms[message.RoomID]) == 1 {
-		// 	h.broadcastToChatRoomExcept(message.RoomID, client.user.ID, message)
-		// }
 
 	case onCallLeave:
 		if client.callRoomID == 0 {
 			return ErrNotInCall
 		}
 
-		h.leaveCallRoom(message.ChatID, client)
-		h.broadcastToChatRoom(message.ChatID, dto.ResponseMessage{
-			Event: onCallLeave,
+		h.onLeaveCallRoom(message.ChatID, client)
+
+	case onRunDemo, onStopDemo:
+		if client.callRoomID == 0 {
+			return ErrNotInCall
+		}
+
+		h.broadcastToChatRoomExcept(message.ChatID, client.user.ID, dto.ResponseMessage{
+			Event: message.Event,
 			Data:  map[string]uint{"chat_id": message.ChatID, "user_id": client.user.ID},
 		})
 
@@ -46,4 +55,12 @@ func (h *hub) handleClientMessage(client *HubClient, message *dto.ClientMessage)
 	}
 
 	return nil
+}
+
+func (h *hub) onLeaveCallRoom(chatID uint, client *HubClient) {
+	h.leaveCallRoom(chatID, client)
+	h.broadcastToChatRoom(chatID, dto.ResponseMessage{
+		Event: onCallLeave,
+		Data:  map[string]uint{"chat_id": chatID, "user_id": client.user.ID},
+	})
 }
