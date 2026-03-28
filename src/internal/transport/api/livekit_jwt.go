@@ -40,7 +40,12 @@ func (h *handler) getToken(c echo.Context) error {
 		RoomJoin: true,
 		Room:     room,
 	}
-	grant.SetCanPublishSources([]livekit.TrackSource{livekit.TrackSource_MICROPHONE})
+	grant.SetCanPublish(true)
+	grant.SetCanPublishSources([]livekit.TrackSource{
+		livekit.TrackSource_MICROPHONE,
+		livekit.TrackSource_SCREEN_SHARE,
+		livekit.TrackSource_SCREEN_SHARE_AUDIO,
+	})
 
 	at := auth.NewAccessToken(h.cfg.LiveKit.ApiKey, h.cfg.LiveKit.ApiSecret)
 	at = at.AddGrant(grant)
