@@ -2,6 +2,7 @@ package hub
 
 import (
 	"suscord/internal/domain/entity"
+	"sync"
 
 	"github.com/gorilla/websocket"
 )
@@ -11,6 +12,7 @@ type HubClient struct {
 	conn       *websocket.Conn
 	chatRooms  map[uint]bool
 	callRoomID uint
+	mutex      sync.Mutex
 }
 
 func NewHubClient(conn *websocket.Conn, user entity.User) *HubClient {
@@ -23,8 +25,24 @@ func NewHubClient(conn *websocket.Conn, user entity.User) *HubClient {
 }
 
 func (c *HubClient) SendMessage(message any) error {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
 	if c.conn != nil {
 		return c.conn.WriteJSON(message)
 	}
 	return nil
+}
+
+func (c *HubClient) Close() error {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	if c.conn == nil {
+		return nil
+	}
+
+	err := c.conn.Close()
+	c.conn = nil
+	return err
 }

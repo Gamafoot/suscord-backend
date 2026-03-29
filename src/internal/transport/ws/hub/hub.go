@@ -11,6 +11,7 @@ import (
 	"suscord/internal/transport/ws/hub/dto"
 	"sync"
 
+	"github.com/gorilla/websocket"
 	"go.uber.org/zap"
 )
 
@@ -36,6 +37,11 @@ type hub struct {
 
 	storage storage.Storage
 	logger  *zap.SugaredLogger
+}
+
+type callParticipant struct {
+	chatID uint
+	user   entity.User
 }
 
 func NewHub(
@@ -64,7 +70,11 @@ func (h *hub) ReceiveMessageHandler(client *HubClient) {
 		message := new(dto.ClientMessage)
 		err := client.conn.ReadJSON(message)
 		if err != nil {
-			h.logger.Errorw("ws ReadJSON error", "error", err)
+			if websocket.IsCloseError(err, websocket.CloseGoingAway, websocket.CloseNormalClosure) {
+				h.logger.Infow("ws closed by client", "user_id", client.user.ID, "error", err)
+			} else {
+				h.logger.Errorw("ws ReadJSON error", "user_id", client.user.ID, "error", err)
+			}
 			h.Unregister(client)
 			return
 		}
@@ -82,56 +92,35 @@ func (h *hub) Register(client *HubClient, chats []entity.Chat) {
 	h.mutex.Unlock()
 	h.joinToUserChatRooms(client, chats)
 
-	h.mutex.RLock()
-	defer h.mutex.RUnlock()
-
-	for chatRoomID := range client.chatRooms {
-		if room, exists := h.callRooms[chatRoomID]; exists {
-			for participantID := range room {
-				if participantID == client.user.ID {
-					continue
-				}
-
-				participant, ok := h.clients[participantID]
-				if ok {
-					client.SendMessage(dto.ResponseMessage{
-						Event: onCallJoin,
-						Data: map[string]any{
-							"chat_id": chatRoomID,
-							"user":    gDTO.NewUser(participant.user, h.cfg.Media.Url),
-						},
-					})
-				}
-			}
-		}
+	for _, participant := range h.snapshotCallParticipants(client) {
+		client.SendMessage(dto.ResponseMessage{
+			Event: onCallJoin,
+			Data: map[string]any{
+				"chat_id": participant.chatID,
+				"user":    gDTO.NewUser(participant.user, h.cfg.Media.Url),
+			},
+		})
 	}
 }
 
 func (h *hub) GetCurrentCallMembers(clientID uint) ([]entity.User, error) {
-	var client *HubClient
-
 	h.mutex.RLock()
-	c, ok := h.clients[clientID]
+	defer h.mutex.RUnlock()
+
+	client, ok := h.clients[clientID]
 	if !ok {
-		h.mutex.RUnlock()
 		return nil, fmt.Errorf("client with id = %d not found in websocket connections", clientID)
 	}
-	if c.callRoomID == 0 {
-		h.mutex.RUnlock()
+	if client.callRoomID == 0 {
 		return nil, errors.New("you are not in a call")
 	}
-	client = c
-	h.mutex.RUnlock()
 
 	result := make([]entity.User, 0)
 
-	h.mutex.Lock()
-	defer h.mutex.Unlock()
-
 	if clients, ok := h.callRooms[client.callRoomID]; ok {
 		for cID := range clients {
-			if client, ok := h.clients[cID]; ok {
-				result = append(result, client.user)
+			if member, ok := h.clients[cID]; ok {
+				result = append(result, member.user)
 			}
 		}
 	}
@@ -140,11 +129,12 @@ func (h *hub) GetCurrentCallMembers(clientID uint) ([]entity.User, error) {
 }
 
 func (h *hub) Unregister(client *HubClient) {
+	defer client.Close()
+
 	pendingRoomIDs := make([]uint, 0)
 
 	h.mutex.Lock()
 	if _, exists := h.clients[client.user.ID]; exists {
-		// Удаляем пользователя из чатов и удаляем чаты если они пустые
 		for roomID := range client.chatRooms {
 			pendingRoomIDs = append(pendingRoomIDs, roomID)
 			if room, ok := h.chatRooms[roomID]; ok {
@@ -156,7 +146,6 @@ func (h *hub) Unregister(client *HubClient) {
 			}
 		}
 
-		// // Удаляем пользователя из комнат со звонком и удаляем сами комнаты если они пустые
 		for roomID, room := range h.callRooms {
 			if _, ok := room[client.user.ID]; ok {
 				delete(room, client.user.ID)
@@ -168,7 +157,6 @@ func (h *hub) Unregister(client *HubClient) {
 		}
 
 		delete(h.clients, client.user.ID)
-		client.conn.Close()
 	}
 	h.mutex.Unlock()
 
@@ -185,4 +173,44 @@ func (h *hub) Unregister(client *HubClient) {
 			},
 		})
 	}
+}
+
+func (h *hub) getClient(userID uint) (*HubClient, bool) {
+	h.mutex.RLock()
+	defer h.mutex.RUnlock()
+
+	client, exists := h.clients[userID]
+	return client, exists
+}
+
+func (h *hub) snapshotCallParticipants(client *HubClient) []callParticipant {
+	h.mutex.RLock()
+	defer h.mutex.RUnlock()
+
+	participants := make([]callParticipant, 0)
+
+	for chatRoomID := range client.chatRooms {
+		room, exists := h.callRooms[chatRoomID]
+		if !exists {
+			continue
+		}
+
+		for participantID := range room {
+			if participantID == client.user.ID {
+				continue
+			}
+
+			participant, ok := h.clients[participantID]
+			if !ok {
+				continue
+			}
+
+			participants = append(participants, callParticipant{
+				chatID: chatRoomID,
+				user:   participant.user,
+			})
+		}
+	}
+
+	return participants
 }

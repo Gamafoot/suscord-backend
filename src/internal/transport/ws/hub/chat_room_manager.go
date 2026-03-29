@@ -66,78 +66,108 @@ func (h *hub) joinToUserChatRooms(client *HubClient, chats []entity.Chat) {
 }
 
 func (h *hub) broadcastToChatRoom(roomID uint, message interface{}) {
-	h.mutex.RLock()
-	defer h.mutex.RUnlock()
-
-	if room, exists := h.chatRooms[roomID]; exists {
-		for userID := range room {
-			if client, exists := h.clients[userID]; exists {
-				client.SendMessage(message)
-			}
-		}
+	for _, client := range h.snapshotChatRoomClients(roomID, 0) {
+		client.SendMessage(message)
 	}
 }
 
 func (h *hub) broadcastToChatRoomExcept(roomID, exceptUserID uint, message any) {
-	h.mutex.RLock()
-	defer h.mutex.RUnlock()
-
-	if room, exists := h.chatRooms[roomID]; exists {
-		for userID := range room {
-			if userID != exceptUserID {
-				if client, exists := h.clients[userID]; exists {
-					client.SendMessage(message)
-				}
-			}
-		}
+	for _, client := range h.snapshotChatRoomClients(roomID, exceptUserID) {
+		client.SendMessage(message)
 	}
 }
 
 func (h *hub) broadcastToCallRoom(roomID uint, message any) {
-	h.mutex.RLock()
-	defer h.mutex.RUnlock()
-
-	if room, exists := h.callRooms[roomID]; exists {
-		for userID := range room {
-			if client, exists := h.clients[userID]; exists {
-				client.SendMessage(message)
-			}
-		}
+	for _, client := range h.snapshotCallRoomClients(roomID, 0) {
+		client.SendMessage(message)
 	}
 }
 
 func (h *hub) broadcastToCallRoomExcept(roomID, exceptUserID uint, message any) {
-	h.mutex.RLock()
-	defer h.mutex.RUnlock()
-
-	if room, exists := h.callRooms[roomID]; exists {
-		for userID := range room {
-			if userID != exceptUserID {
-				if client, exists := h.clients[userID]; exists {
-					client.SendMessage(message)
-				}
-			}
-		}
+	for _, client := range h.snapshotCallRoomClients(roomID, exceptUserID) {
+		client.SendMessage(message)
 	}
 }
 
 func (h *hub) broadcastToAll(message interface{}) {
-	h.mutex.RLock()
-	defer h.mutex.RUnlock()
-
-	for userID := range h.clients {
-		h.clients[userID].SendMessage(message)
+	for _, client := range h.snapshotAllClients(0) {
+		client.SendMessage(message)
 	}
 }
 
 func (h *hub) broadcastToAllExcept(userID uint, message interface{}) {
+	for _, client := range h.snapshotAllClients(userID) {
+		client.SendMessage(message)
+	}
+}
+
+func (h *hub) snapshotChatRoomClients(roomID, exceptUserID uint) []*HubClient {
 	h.mutex.RLock()
 	defer h.mutex.RUnlock()
 
-	for uID := range h.clients {
-		if uID == userID {
+	clients := make([]*HubClient, 0)
+
+	room, exists := h.chatRooms[roomID]
+	if !exists {
+		return clients
+	}
+
+	for userID := range room {
+		if userID == exceptUserID && exceptUserID != 0 {
 			continue
 		}
-		h.clients[uID].SendMessage(message)
+
+		client, exists := h.clients[userID]
+		if !exists {
+			continue
+		}
+
+		clients = append(clients, client)
 	}
+
+	return clients
+}
+
+func (h *hub) snapshotCallRoomClients(roomID, exceptUserID uint) []*HubClient {
+	h.mutex.RLock()
+	defer h.mutex.RUnlock()
+
+	clients := make([]*HubClient, 0)
+
+	room, exists := h.callRooms[roomID]
+	if !exists {
+		return clients
+	}
+
+	for userID := range room {
+		if userID == exceptUserID && exceptUserID != 0 {
+			continue
+		}
+
+		client, exists := h.clients[userID]
+		if !exists {
+			continue
+		}
+
+		clients = append(clients, client)
+	}
+
+	return clients
+}
+
+func (h *hub) snapshotAllClients(exceptUserID uint) []*HubClient {
+	h.mutex.RLock()
+	defer h.mutex.RUnlock()
+
+	clients := make([]*HubClient, 0, len(h.clients))
+
+	for userID, client := range h.clients {
+		if userID == exceptUserID && exceptUserID != 0 {
+			continue
+		}
+
+		clients = append(clients, client)
+	}
+
+	return clients
 }

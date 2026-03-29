@@ -78,7 +78,7 @@ func (h *hub) onUserInvited(ctx context.Context, payload any) error {
 		return pkgerr.WithStack(derr.ErrInvalidPayload)
 	}
 
-	if client, exists := h.clients[data.UserID]; exists {
+	if client, exists := h.getClient(data.UserID); exists {
 		client.SendMessage(dto.ResponseMessage{
 			Event: data.EventName(),
 			Data: map[string]string{
@@ -110,7 +110,7 @@ func (h *hub) onUserJoinedGroupChat(ctx context.Context, payload any) error {
 		return pkgerr.WithStack(derr.ErrInvalidPayload)
 	}
 
-	if client, exists := h.clients[data.User.ID]; exists {
+	if client, exists := h.getClient(data.User.ID); exists {
 		h.joinChatRoom(data.ChatID, client)
 		h.broadcastToChatRoomExcept(data.ChatID, data.User.ID, dto.ResponseMessage{
 			Event:  data.EventName(),
@@ -128,7 +128,7 @@ func (h *hub) onUserJoinedPrivateChat(ctx context.Context, payload any) error {
 		return pkgerr.WithStack(derr.ErrInvalidPayload)
 	}
 
-	if client, exists := h.clients[data.User.ID]; exists {
+	if client, exists := h.getClient(data.User.ID); exists {
 		h.joinChatRoom(data.ChatID, client)
 		client.SendMessage(&dto.ResponseMessage{
 			Event: data.EventName(),
