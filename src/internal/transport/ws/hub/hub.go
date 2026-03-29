@@ -126,12 +126,15 @@ func (h *hub) GetCurrentCallMembers(clientID uint) ([]entity.User, error) {
 	result := make([]entity.User, 0)
 
 	h.mutex.Lock()
+	defer h.mutex.Unlock()
+
 	if clients, ok := h.callRooms[client.callRoomID]; ok {
 		for cID := range clients {
-			result = append(result, h.clients[cID].user)
+			if client, ok := h.clients[cID]; ok {
+				result = append(result, client.user)
+			}
 		}
 	}
-	h.mutex.Unlock()
 
 	return result, nil
 }
