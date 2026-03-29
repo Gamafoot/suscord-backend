@@ -82,16 +82,26 @@ func (h *hub) Register(client *HubClient, chats []entity.Chat) {
 	h.mutex.Unlock()
 	h.joinToUserChatRooms(client, chats)
 
+	h.mutex.RLock()
+	defer h.mutex.RUnlock()
+
 	for chatRoomID := range client.chatRooms {
-		for _, ok := range h.callRooms[chatRoomID] {
-			if ok {
-				client.SendMessage(dto.ResponseMessage{
-					Event: onCallJoin,
-					Data: map[string]any{
-						"chat_id": chatRoomID,
-						"user":    gDTO.NewUser(client.user, h.cfg.Media.Url),
-					},
-				})
+		if room, exists := h.callRooms[chatRoomID]; exists {
+			for participantID := range room {
+				if participantID == client.user.ID {
+					continue
+				}
+
+				participant, ok := h.clients[participantID]
+				if ok {
+					client.SendMessage(dto.ResponseMessage{
+						Event: onCallJoin,
+						Data: map[string]any{
+							"chat_id": chatRoomID,
+							"user":    gDTO.NewUser(participant.user, h.cfg.Media.Url),
+						},
+					})
+				}
 			}
 		}
 	}
