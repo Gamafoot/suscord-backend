@@ -1,9 +1,12 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 	"suscord/internal/domain/entity"
 	"suscord/internal/transport/utils"
+
+	derr "suscord/internal/domain/errors"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
@@ -36,6 +39,9 @@ func (h *handler) login(c echo.Context) error {
 		Password: input.Password,
 	})
 	if err != nil {
+		if errors.Is(err, derr.ErrInvalidLoginOrPassword) {
+			return utils.NewErrorResponse(c, http.StatusUnauthorized, derr.ErrInvalidLoginOrPassword)
+		}
 		return err
 	}
 
