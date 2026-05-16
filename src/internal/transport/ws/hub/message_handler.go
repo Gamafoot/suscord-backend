@@ -18,6 +18,14 @@ const (
 func (h *hub) handleClientMessage(client *HubClient, message *dto.ClientMessage) error {
 	switch message.Event {
 	case onCallJoin:
+		if client.callRoomID == message.ChatID {
+			return ErrAlreadyInCall
+		}
+
+		if client.callRoomID != 0 {
+			h.onLeaveCallRoom(client.callRoomID, client)
+		}
+
 		h.joinCallRoom(message.ChatID, client)
 		h.broadcastToChatRoomExcept(message.ChatID, client.user.ID, dto.ResponseMessage{
 			Event: onCallJoin,
@@ -31,12 +39,18 @@ func (h *hub) handleClientMessage(client *HubClient, message *dto.ClientMessage)
 		if client.callRoomID == 0 {
 			return ErrNotInCall
 		}
+		if client.callRoomID != message.ChatID {
+			return ErrInvalidCallRoomID
+		}
 
 		h.onLeaveCallRoom(message.ChatID, client)
 
 	case onRunDemo, onStopDemo:
 		if client.callRoomID == 0 {
 			return ErrNotInCall
+		}
+		if client.callRoomID != message.ChatID {
+			return ErrInvalidCallRoomID
 		}
 
 		h.broadcastToChatRoomExcept(message.ChatID, client.user.ID, dto.ResponseMessage{

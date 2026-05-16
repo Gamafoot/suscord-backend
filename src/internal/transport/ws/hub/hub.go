@@ -75,7 +75,6 @@ func (h *hub) ReceiveMessageHandler(client *HubClient) {
 			} else {
 				h.logger.Errorw("ws ReadJSON error", "user_id", client.user.ID, "error", err)
 			}
-			h.Unregister(client)
 			return
 		}
 
@@ -146,12 +145,12 @@ func (h *hub) Unregister(client *HubClient) {
 			}
 		}
 
-		for roomID, room := range h.callRooms {
-			if _, ok := room[client.user.ID]; ok {
+		if client.callRoomID != 0 {
+			if room, ok := h.callRooms[client.callRoomID]; ok {
 				delete(room, client.user.ID)
 
 				if len(room) == 0 {
-					delete(h.callRooms, roomID)
+					delete(h.callRooms, client.callRoomID)
 				}
 			}
 		}

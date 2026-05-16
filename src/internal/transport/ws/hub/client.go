@@ -3,6 +3,7 @@ package hub
 import (
 	"suscord/internal/domain/entity"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -28,10 +29,26 @@ func (c *HubClient) SendMessage(message any) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	if c.conn != nil {
-		return c.conn.WriteJSON(message)
+	if c.conn == nil {
+		return nil
 	}
-	return nil
+
+	return c.conn.WriteJSON(message)
+}
+
+func (c *HubClient) SendPing(writeWait time.Duration) error {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	if c.conn == nil {
+		return nil
+	}
+
+	if err := c.conn.SetWriteDeadline(time.Now().Add(writeWait)); err != nil {
+		return err
+	}
+
+	return c.conn.WriteMessage(websocket.PingMessage, nil)
 }
 
 func (c *HubClient) Close() error {

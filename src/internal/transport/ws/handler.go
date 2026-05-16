@@ -83,23 +83,6 @@ func (h *handler) websocket(c echo.Context) error {
 	done := make(chan struct{})
 	defer close(done)
 
-	go func() {
-		ticker := time.NewTicker(pingPeriod)
-		defer ticker.Stop()
-
-		for {
-			select {
-			case <-ticker.C:
-				conn.SetWriteDeadline(time.Now().Add(writeWait))
-				if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-					return
-				}
-			case <-done:
-				return
-			}
-		}
-	}()
-
 	userID := c.Get("user_id").(uint)
 
 	user, err := h.storage.User().GetByID(c.Request().Context(), userID)
@@ -113,11 +96,27 @@ func (h *handler) websocket(c echo.Context) error {
 	}
 
 	client := hub.NewHubClient(conn, user)
+	defer h.hub.Unregister(client)
 
 	h.hub.Register(client, chats)
-	h.hub.ReceiveMessageHandler(client)
 
-	h.hub.Unregister(client)
+	go func() {
+		ticker := time.NewTicker(pingPeriod)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
+				if err := client.SendPing(writeWait); err != nil {
+					return
+				}
+			case <-done:
+				return
+			}
+		}
+	}()
+
+	h.hub.ReceiveMessageHandler(client)
 
 	return nil
 }
