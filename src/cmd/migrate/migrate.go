@@ -26,6 +26,7 @@ func main() {
 	log.Println("start migrating...")
 
 	cfg := config.GetConfig()
+	dialect := relational.DialectFromURL(cfg.Database.URL)
 
 	db, err := relational.NewConnect(cfg.Database.URL, cfg.Database.LogLevel)
 	if err != nil {
@@ -36,7 +37,7 @@ func main() {
 		log.Fatalf("failed to migrate models: %v", err)
 	}
 
-	scripts, err := getSqlScripts("trigger")
+	scripts, err := getSqlScripts(fmt.Sprintf("trigger/%s", dialect))
 	if err != nil {
 		log.Fatalf("failed get trigger scripts: %+v\n", err)
 	}

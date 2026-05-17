@@ -1,17 +1,16 @@
 package relational
 
 import (
+	"fmt"
 	"strings"
 
 	"gorm.io/driver/postgres"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	gormlog "gorm.io/gorm/logger"
 )
 
 const (
 	DialectPostgres = "postgres"
-	DialectSQLite   = "sqlite"
 )
 
 func NewConnect(dbURL, log_level string) (*gorm.DB, error) {
@@ -40,23 +39,11 @@ func NewConnect(dbURL, log_level string) (*gorm.DB, error) {
 		db, err = gorm.Open(postgres.Open(dbURL), &gorm.Config{
 			Logger: logger,
 		})
-	case DialectSQLite:
-		db, err = gorm.Open(sqlite.Open(dbURL), &gorm.Config{
-			Logger: logger,
-		})
 	default:
-		db, err = gorm.Open(sqlite.Open(dbURL), &gorm.Config{
-			Logger: logger,
-		})
+		return nil, fmt.Errorf("unsupported database dialect for url %q", dbURL)
 	}
 	if err != nil {
 		return nil, err
-	}
-
-	if dialect == DialectSQLite {
-		if err = db.Exec("PRAGMA foreign_keys = ON").Error; err != nil {
-			return nil, err
-		}
 	}
 
 	return db, nil
@@ -71,6 +58,6 @@ func DialectFromURL(dbURL string) string {
 	case strings.Contains(url, "host=") && strings.Contains(url, "dbname="):
 		return DialectPostgres
 	default:
-		return DialectSQLite
+		return ""
 	}
 }

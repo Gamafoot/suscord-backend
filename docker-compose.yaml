@@ -1,18 +1,39 @@
 services:
+  postgres:
+    container_name: postgres
+    image: postgres:17-alpine
+    environment:
+      - POSTGRES_DB=suscord
+      - POSTGRES_USER=suscord
+      - POSTGRES_PASSWORD=suscord
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U suscord -d suscord"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - suscord
+
   backend:
     container_name: backend
     build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
     ports:
       - 8000:8000
     environment:
       - API_HOST=0.0.0.0
-      - DB_URL=./database/suscord.db
+      - DB_URL=postgres://suscord:suscord@postgres:5432/suscord?sslmode=disable
       - MIGRATE=true
-    volumes:
-      - "./database:/app/database"
     networks:
       - suscord
-    
+
+volumes:
+  postgres_data:
+
 networks:
   suscord:
     driver: bridge
