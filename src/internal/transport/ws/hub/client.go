@@ -16,6 +16,8 @@ type HubClient struct {
 	mutex      sync.Mutex
 }
 
+const writeWait = 10 * time.Second
+
 func NewHubClient(conn *websocket.Conn, user entity.User) *HubClient {
 	return &HubClient{
 		user:       user,
@@ -33,10 +35,14 @@ func (c *HubClient) SendMessage(message any) error {
 		return nil
 	}
 
+	if err := c.conn.SetWriteDeadline(time.Now().Add(writeWait)); err != nil {
+		return err
+	}
+
 	return c.conn.WriteJSON(message)
 }
 
-func (c *HubClient) SendPing(writeWait time.Duration) error {
+func (c *HubClient) SendPing() error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 

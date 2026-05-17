@@ -53,7 +53,6 @@ func (h *handler) InitRoutes(route *echo.Group) {
 }
 
 var (
-	writeWait  = 10 * time.Second
 	pongWait   = 60 * time.Second
 	pingPeriod = 54 * time.Second
 )
@@ -107,7 +106,7 @@ func (h *handler) websocket(c echo.Context) error {
 		for {
 			select {
 			case <-ticker.C:
-				if err := client.SendPing(writeWait); err != nil {
+				if err := client.SendPing(); err != nil {
 					return
 				}
 			case <-done:
