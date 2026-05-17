@@ -1,0 +1,14 @@
+port: 7880
+
+bind_addresses:
+  - 0.0.0.0
+
+keys:
+  "api_key": "secret_key"
+
+rtc:
+  tcp_port: 7881
+  udp_port: 443
+  port_range_start: 10000
+  port_range_end: 10020
+  use_external_ip: true

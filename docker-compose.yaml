@@ -1,4 +1,21 @@
 services:
+  backend:
+    container_name: backend
+    restart: unless-stopped
+    image: backend
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - 8000:8000
+    environment:
+      - API_HOST=0.0.0.0
+      - DB_URL=postgres://suscord:suscord@postgres:5432/suscord?sslmode=disable
+      - MIGRATE=true
+    networks:
+      - suscord
+
   postgres:
     container_name: postgres
     image: postgres:17-alpine
@@ -16,18 +33,17 @@ services:
     networks:
       - suscord
 
-  backend:
-    container_name: backend
-    build: .
-    depends_on:
-      postgres:
-        condition: service_healthy
+  livekit:
+    image: livekit/livekit-server:latest
+    restart: unless-stopped
+    container_name: livekit
+    command: --config /etc/livekit.yaml
     ports:
-      - 8000:8000
-    environment:
-      - API_HOST=0.0.0.0
-      - DB_URL=postgres://suscord:suscord@postgres:5432/suscord?sslmode=disable
-      - MIGRATE=true
+      - "7880:7880"
+      - "7881:7881"
+      - "50000-50100:50000-50100/udp"
+    volumes:
+      - ./livekit/config.yaml:/etc/livekit.yaml
     networks:
       - suscord
 
