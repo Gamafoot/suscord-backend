@@ -118,7 +118,7 @@ func (s *messageStorage) IsAuthor(ctx context.Context, userID, messageID uint) (
 
 func messageModelToDomain(message *model.Message) *entity.Message {
 	attachments := make([]entity.Attachment, len(message.Attachments))
-	for i, attachment := range attachments {
+	for i, attachment := range message.Attachments {
 		attachments[i] = entity.Attachment{
 			ID:        attachment.ID,
 			MessageID: attachment.MessageID,
