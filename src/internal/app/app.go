@@ -3,12 +3,12 @@ package app
 import (
 	"context"
 	"log"
+	"suscord/internal/adapter/cache/inmemory"
+	"suscord/internal/adapter/database/relational"
+	implStorage "suscord/internal/adapter/database/relational/storage"
+	"suscord/internal/adapter/eventbus"
+	"suscord/internal/adapter/file"
 	"suscord/internal/config"
-	"suscord/internal/infra/cache/inmemory"
-	"suscord/internal/infra/database/relational"
-	implStorage "suscord/internal/infra/database/relational/storage"
-	"suscord/internal/infra/eventbus"
-	file "suscord/internal/infra/file_manager"
 	"suscord/internal/service"
 	"suscord/pkg/logger"
 

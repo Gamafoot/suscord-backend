@@ -2,7 +2,7 @@ package api
 
 import (
 	"suscord/internal/config"
-	"suscord/internal/domain/storage"
+	"suscord/internal/port/storage"
 	"suscord/internal/service"
 	"suscord/internal/transport/middleware"
 

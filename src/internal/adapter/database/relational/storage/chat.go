@@ -3,8 +3,8 @@ package storage
 import (
 	"context"
 	"strings"
+	"suscord/internal/adapter/database/relational/model"
 	"suscord/internal/domain/entity"
-	"suscord/internal/infra/database/relational/model"
 
 	pkgerr "github.com/pkg/errors"
 	"gorm.io/gorm"

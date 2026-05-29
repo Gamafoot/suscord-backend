@@ -6,9 +6,9 @@ import (
 	"suscord/internal/domain/entity"
 	derr "suscord/internal/domain/errors"
 	"suscord/internal/domain/event"
-	"suscord/internal/domain/eventbus"
-	"suscord/internal/domain/storage"
-	file "suscord/internal/infra/file_manager"
+	"suscord/internal/port/eventbus"
+	"suscord/internal/port/file"
+	"suscord/internal/port/storage"
 
 	pkgerr "github.com/pkg/errors"
 	"go.uber.org/multierr"

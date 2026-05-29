@@ -1,7 +1,7 @@
 package storage
 
 import (
-	dstorage "suscord/internal/domain/storage"
+	dstorage "suscord/internal/port/storage"
 
 	"gorm.io/gorm"
 )

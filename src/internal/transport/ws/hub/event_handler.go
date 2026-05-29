@@ -4,7 +4,7 @@ import (
 	"context"
 	derr "suscord/internal/domain/errors"
 	"suscord/internal/domain/event"
-	"suscord/internal/domain/eventbus"
+	"suscord/internal/port/eventbus"
 	"suscord/internal/transport/ws/hub/dto"
 
 	pkgerr "github.com/pkg/errors"

@@ -3,12 +3,12 @@ package service
 import (
 	"context"
 	"suscord/internal/config"
-	"suscord/internal/domain/cache"
+	"suscord/internal/port/cache"
 	"suscord/internal/domain/entity"
 	derr "suscord/internal/domain/errors"
 	"suscord/internal/domain/event"
-	"suscord/internal/domain/eventbus"
-	"suscord/internal/domain/storage"
+	"suscord/internal/port/eventbus"
+	"suscord/internal/port/storage"
 	"time"
 
 	"github.com/google/uuid"

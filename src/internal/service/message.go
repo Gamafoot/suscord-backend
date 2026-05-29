@@ -8,9 +8,9 @@ import (
 	"suscord/internal/domain/entity"
 	domainErrors "suscord/internal/domain/errors"
 	"suscord/internal/domain/event"
-	"suscord/internal/domain/eventbus"
-	"suscord/internal/domain/storage"
-	file "suscord/internal/infra/file_manager"
+	"suscord/internal/port/eventbus"
+	"suscord/internal/port/file"
+	"suscord/internal/port/storage"
 
 	"go.uber.org/zap"
 )

@@ -5,7 +5,7 @@ import (
 	"suscord/internal/config"
 	"suscord/internal/domain/entity"
 	domainErrors "suscord/internal/domain/errors"
-	"suscord/internal/domain/storage"
+	"suscord/internal/port/storage"
 	"suscord/pkg/hash"
 
 	pkgerr "github.com/pkg/errors"

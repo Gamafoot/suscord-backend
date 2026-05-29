@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"suscord/internal/config"
-	"suscord/internal/domain/storage"
+	"suscord/internal/port/storage"
 )
 
 type Middleware struct {

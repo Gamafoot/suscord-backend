@@ -2,11 +2,11 @@ package service
 
 import (
 	"suscord/internal/config"
-	"suscord/internal/domain/eventbus"
-	"suscord/internal/domain/storage"
-	file "suscord/internal/infra/file_manager"
+	"suscord/internal/port/eventbus"
+	"suscord/internal/port/file"
+	"suscord/internal/port/storage"
 
-	"suscord/internal/domain/cache"
+	"suscord/internal/port/cache"
 
 	"go.uber.org/zap"
 )

@@ -3,7 +3,7 @@ package ws
 import (
 	"net/http"
 	"suscord/internal/config"
-	"suscord/internal/domain/storage"
+	"suscord/internal/port/storage"
 	"suscord/internal/transport/dto"
 	"suscord/internal/transport/utils"
 	"suscord/internal/transport/ws/hub"

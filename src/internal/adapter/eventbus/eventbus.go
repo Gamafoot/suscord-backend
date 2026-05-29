@@ -2,7 +2,7 @@ package eventbus
 
 import (
 	"context"
-	"suscord/internal/domain/eventbus"
+	"suscord/internal/port/eventbus"
 	"time"
 
 	"go.uber.org/zap"

@@ -2,9 +2,9 @@ package storage
 
 import (
 	"context"
+	"suscord/internal/adapter/database/relational/model"
 	"suscord/internal/domain/entity"
 	derr "suscord/internal/domain/errors"
-	"suscord/internal/infra/database/relational/model"
 
 	pkgerr "github.com/pkg/errors"
 	"gorm.io/gorm"

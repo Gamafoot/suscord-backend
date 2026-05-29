@@ -12,11 +12,6 @@ import (
 	pkgerr "github.com/pkg/errors"
 )
 
-type FileManager interface {
-	Upload(file *entity.File, uploadTo string) (string, error)
-	Delete(filepath string) error
-}
-
 type fileManager struct {
 	mediaPath string
 }

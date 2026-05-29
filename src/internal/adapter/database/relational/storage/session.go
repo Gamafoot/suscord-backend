@@ -2,9 +2,9 @@ package storage
 
 import (
 	"context"
+	"suscord/internal/adapter/database/relational/model"
 	"suscord/internal/domain/entity"
 	domainErrors "suscord/internal/domain/errors"
-	"suscord/internal/infra/database/relational/model"
 
 	uuidlib "github.com/google/uuid"
 	pkgerr "github.com/pkg/errors"
